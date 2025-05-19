@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Student Grade Viewer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      color: #f1f1f1;
+      background-color: #121212;
+      text-align: center;
+    }
+
+    /* Loader */
+    #loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #121212;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    .loader-spinner {
+      border: 10px solid #f3f3f3;
+      border-top: 10px solid #4CAF50;
+      border-radius: 50%;
+      width: 80px;
+      height: 80px;
+      animation: spin 1.2s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Login Page Styles */
+    #login-page {
+      display: none;
+      padding-top: 50px;
+    }
+
+    input[type="text"], input[type="password"] {
+      padding: 10px;
+      margin: 10px;
+      width: 200px;
+      background-color: #333;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #45a049;
+    }
+
+    #error-msg {
+      color: #ff6b6b;
+    }
+
+    .top-left-buttons {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+    }
+
+    .top-left-buttons button {
+      margin: 5px;
+    }
+
+    #student-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 10px;
+    }
+
+    .student-btn {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background-color: #2e2e2e;
+      color: #fff;
+      border: 2px solid #4CAF50;
+      cursor: pointer;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 5px;
+    }
+
+    .student-btn:hover {
+      background-color: #3d3d3d;
+    }
+
+    table {
+      margin: 0 auto;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: #1e1e1e;
+    }
+
+    th, td {
+      border: 1px solid #333;
+      padding: 10px 15px;
+    }
+
+    th {
+      background-color: #2e2e2e;
+    }
+
+    .grade-A { color: #00e676; font-weight: bold; }
+    .grade-B { color: #76ff03; font-weight: bold; }
+    .grade-C { color: #ffb300; font-weight: bold; }
+    .grade-D { color: #ff5722; font-weight: bold; }
+    .grade-F { color: #f44336; font-weight: bold; }
+
+    /* Hide all sections by default except loader */
+    #dashboard, #about-us, #grade-page {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Loader -->
+  <div id="loader">
+    <div class="loader-spinner"></div>
+  </div>
+
+  <!-- Top-left buttons -->
+  <div class="top-left-buttons">
+    <button onclick="goHome()">Home</button>
+    <button onclick="aboutUs()">About Us</button>
+  </div>
+
+  <!-- Login Page -->
+  <div id="login-page">
+    <h2 style="color: #4CAF50;">Welcome! Please Log In</h2>
+    <p style="font-style: italic;">Here to see your results</p>
+    <input type="text" id="username" placeholder="Username" /><br />
+    <input type="password" id="password" placeholder="Password" /><br />
+    <button onclick="login()">Login</button>
+    <p id="error-msg"></p>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard">
+    <h2>Thanks for Logging In!</h2>
+    <h3>Select a Student</h3>
+    <input type="text" id="search-box" placeholder="Search student..." onkeyup="filterStudents()" />
+    <div id="student-buttons"></div>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <!-- About Us -->
+  <div id="about-us">
+    <h2>About Us</h2>
+    <p>This is a Grade 11 Result Viewer for students.</p>
+    <p>Built using basic HTML, CSS, and JavaScript to help students quickly check their performance.</p>
+    <p>Contact: school@example.com</p>
+    <button onclick="goHome()">Back</button>
+  </div>
+
+  <!-- Grade Page -->
+  <div id="grade-page">
+    <h2 id="student-name-title"></h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Subject</th>
+          <th>Math</th>
+          <th>English</th>
+          <th>Science</th>
+          <th>History</th>
+          <th>Total</th>
+          <th>Average</th>
+          <th>Grade</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Score</td>
+          <td id="math-grade"></td>
+          <td id="english-grade"></td>
+          <td id="science-grade"></td>
+          <td id="history-grade"></td>
+          <td id="total-grade"></td>
+          <td id="average-grade"></td>
+          <td id="letter-grade"></td>
+        </tr>
+      </tbody>
+    </table>
+    <br />
+    <button onclick="goBack()">Back</button>
+  </div>
+
+  <script>
+    const USERNAME = "admin";
+    const PASSWORD = "1234";
+
+    const studentNames = [
+      "abdulaziz", "arsema", "betelhem", "biruktawit", "eden", "ephrata", "helina", "hosana", "lielina", "liya",
+      "mahider", "mahlet", "mekdelawit", "meklit", "naomi", "rediet m", "rediet t", "rut", "selam", "sosina",
+      "tinsaye", "tirufat", "abel", "anteneh", "nati m", "nati t", "nati d", "eyob", "sale", "bisre",
+      "robel", "bemnet", "biruk", "dagim", "dawit", "falek", "henok", "leul", "yared", "yosef"
+    ];
+
+    const students = studentNames.map(name => ({
+      name: name,
+      math: Math.floor(Math.random() * 101),
+      english: Math.floor(Math.random() * 101),
+      science: Math.floor(Math.random() * 101),
+      history: Math.floor(Math.random() * 101)
+    }));
+
+    window.onload = () => {
+      setTimeout(() => {
+        document.getElementById("loader").style.display = "none";
+        document.getElementById("login-page").style.display = "block";
+      }, 1500);
+    };
+
+    function login() {
+      const uname = document.getElementById("username").value;
+      const pass = document.getElementById("password").value;
+      if (uname === USERNAME && pass === PASSWORD) {
+        document.getElementById("login-page").style.display = "none";
+        document.getElementById("dashboard").style.display = "block";
+        loadStudentButtons();
+      } else {
+        document.getElementById("error-msg").textContent = "Invalid username or password.";
+      }
+    }
+
+    function logout() {
+      document.getElementById("login-page").style.display = "block";
+      document.getElementById("dashboard").style.display = "none";
+      document.getElementById("grade-page").style.display = "none";
+      document.getElementById("username").value = "";
+      document.getElementById("password").value = "";
+      document.getElementById("error-msg").textContent = "";
+    }
+
+    function goBack() {
+      document.getElementById("grade-page").style.display = "none";
+      document.getElementById("dashboard").style.display = "block";
+    }
+
+    function goHome() {
+      document.getElementById("login-page").style.display = "block";
+      document.getElementById("dashboard").style.display = "none";
+      document.getElementById("grade-page").style.display = "none";
+      document.getElementById("about-us").style.display = "none";
+    }
+
+    function aboutUs() {
+      document.getElementById("login-page").style.display = "none";
+      document.getElementById("dashboard").style.display = "none";
+      document.getElementById("grade-page").style.display = "none";
+      document.getElementById("about-us").style.display = "block";
+    }
+
+    function loadStudentButtons() {
+      const container = document.getElementById("student-buttons");
+      container.innerHTML = "";
+      students.forEach((student, index) => {
+        const btn = document.createElement("button");
+        btn.className = "student-btn";
+        btn.textContent = student.name;
+        btn.onclick = () => showGrades(index);
+        container.appendChild(btn);
+      });
+    }
+
+    function filterStudents() {
+      const query = document.getElementById("search-box").value.toLowerCase();
+      const buttons = document.getElementById("student-buttons").children;
+      for (let btn of buttons) {
+        const name = btn.textContent.toLowerCase();
+        btn.style.display = name.includes(query) ? "inline-flex" : "none";
+      }
+    }
+
+    function showGrades(index) {
+      const s = students[index];
+      const total = s.math + s.english + s.science + s.history;
+      const avg = Math.round(total / 4);
+      const grade = getLetter(avg);
+
+      document.getElementById("student-name-title").textContent = `${s.name}'s Grades`;
+      document.getElementById("math-grade").textContent = s.math;
+      document.getElementById("english-grade").textContent = s.english;
+      document.getElementById("science-grade").textContent = s.science;
+      document.getElementById("history-grade").textContent = s.history;
+      document.getElementById("total-grade").textContent = total;
+      document.getElementById("average-grade").textContent = avg;
+      const gradeCell = document.getElementById("letter-grade");
+      gradeCell.textContent = grade;
+      gradeCell.className = "grade-" + grade;
+
+      document.getElementById("dashboard").style.display = "none";
+      document.getElementById("grade-page").style.display = "block";
+    }
+
+    function getLetter(avg) {
+      if (avg >= 90) return "A";
+      else if (avg >= 80) return "B";
+      else if (avg >= 70) return "C";
+      else if (avg >= 60) return "D";
+      else return "F";
+    }
+  </script>
+
+</body>
+</html>
